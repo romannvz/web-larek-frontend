@@ -1,142 +1,195 @@
 import './scss/styles.scss';
 import { Api, ApiListResponse } from './components/base/api';
 import { API_URL, CDN_URL } from './utils/constants';
-import { IProduct, TProductsMainPage, TProductInBasket } from './types';
-import { ProductsData } from './components/ProductsData';
+import {
+	IProduct,
+	TProductInBasketModel,
+	TFirstPartOrder,
+	TSecondPartOrder,
+	IOrder,
+} from './types';
 import { EventEmitter } from './components/base/events';
-import { Product } from './components/Product';
+import { ProductView } from './components/ProductView';
 import { Modal } from './components/Modal';
-import { cloneTemplate } from './utils/utils';
-import { Basket } from './components/Basket';
+import { BasketView } from './components/BasketView';
 import { Order } from './components/OrderData';
+import { BasketItem } from './components/BasketItem';
+import { BasketModel } from './components/BasketModel';
+import { AddressView } from './components/addressView';
+import { ContactsView } from './components/ContactsView';
+import { SuccessView } from './components/SuccessView';
+import { ProductDetailView } from './components/ProductDetailView';
+import { ErrorView } from './components/ErrorView';
 
 const mainBroker = new EventEmitter();
-let orderItems: Record<number, TProductInBasket> = {};
-const productsClass: ProductsData = new ProductsData(mainBroker);
-const productsElements: IProduct[] = [];
 const api = new Api(API_URL);
-const galleryContainer: HTMLElement = document.querySelector('.gallery');
-const modalContainer: HTMLElement = document.querySelector('#modal-container');
-const modalCloseButton: HTMLButtonElement =
-	modalContainer.querySelector('.modal__close');
-const modalContent: HTMLElement =
-	modalContainer.querySelector('.modal__content');
 
-const productsModal: Record<string, Modal> = {};
+const productsElements: IProduct[] = [];
+const productsModal: Modal[] = [];
+const productsDetailView: ProductDetailView[] = [];
+const errorView = new ErrorView(mainBroker);
+const errorModal = new Modal(errorView.errorElement, mainBroker);
 
-const basket = new Basket(
-	modalContainer,
-	modalContent,
-	'#basket',
-	'basket__list',
-	cloneTemplate('#card-basket'),
-	mainBroker
-);
-
-const basketButton: HTMLButtonElement =
-	document.querySelector('.header__basket');
-basketButton.addEventListener('click', () => mainBroker.emit('openBasket'));
-
-const basketModal = new Modal(
-	basket.container,
-	basket.interanceContainer,
-	basket.basketTemp,
-	modalCloseButton,
-	basket.events
-);
-
-const orderTemp: HTMLElement = cloneTemplate('#order');
-const contactsTemp: HTMLElement = cloneTemplate('#contacts');
-const successTemp: HTMLElement = cloneTemplate('#success');
-
-const orderModal: Modal = new Modal(
-	modalContainer,
-	modalContent,
-	orderTemp,
-	modalCloseButton,
-	mainBroker
-);
-
-orderModal.addressField.addEventListener('input', () => {
-	orderModal.validation;
-});
-
-const getCardFromApi = api.get('/product').then((data: ApiListResponse<[]>) => {
-	data.items.forEach((elem) => {
-		productsClass.addItem(Object.assign(elem));
-	});
-});
-
-getCardFromApi.then(() => {
-	productsClass._products.forEach((item) => {
-		item.image = `${CDN_URL}` + item.image;
-		productsElements.push(item);
-	});
-	productsElements.forEach((item) => {
-		let product = new Product(item, mainBroker);
-		product.setDataInTemplate(cloneTemplate('#card-catalog'));
-		product.render(galleryContainer);
-	});
-});
-
-mainBroker.on('openBasket', () => {
-	basket.interanceBasket.textContent = '';
-	basket.getFullBask(cloneTemplate('#card-basket'));
-	if (basket.list.length === 0) {
-		basket.basketSubmitButton.disabled = true;
-		basket.interanceBasket.textContent = 'Здесь пока пусто ):';
-	} else basket.basketSubmitButton.disabled = false;
-	basketModal.open(basket.basketTemp);
-});
-
-mainBroker.on('closeBasket', () => {
-	basket.basketTemp = null;
-});
-
-mainBroker.on('basketChange', () => {
-	basket.getFullBask(cloneTemplate('#card-basket'));
-});
-
-mainBroker.on('modalSubmitButton', (evt: Event) => {
-	let elem = evt.target as HTMLElement;
-	if (elem.textContent === 'В корзину') {
-		elem.textContent = 'Удалить';
-		let title =
-			elem.parentElement.parentElement.querySelector(
-				'.card__title'
-			).textContent;
-		let price = elem.parentElement.querySelector('.card__price').textContent;
-		basket.add({ title, price: Number.parseInt(price) });
-	} else if (elem.textContent === 'Удалить') {
-		elem.textContent = 'В корзину';
-		let title =
-			elem.parentElement.parentElement.querySelector(
-				'.card__title'
-			).textContent;
-		let price = elem.parentElement.querySelector('.card__price').textContent;
-		basket.remove(title);
-	}
-});
-
-mainBroker.on('clickOnCard', (data: IProduct) => {
-	if (!productsModal[data.id]) {
-		productsModal[data.id] = new Modal(
-			modalContainer,
-			modalContent,
-			cloneTemplate('#card-preview'),
-			modalCloseButton,
-			mainBroker
+api
+	.get('/product')
+	.then((data: ApiListResponse<IProduct>) => {
+		data.items.forEach((elem) => {
+			elem.image = `${CDN_URL}` + elem.image;
+			productsElements.push(elem);
+			new ProductView(elem, mainBroker);
+			productsDetailView.push(new ProductDetailView(elem, mainBroker));
+		});
+	})
+	.catch((err) => {
+		errorView.render(
+			`Произошла ошибка при загрузке информации с сервера. Пожалуйста, попробуйте повторить запрос позднее.(Сервер вернул ошибку: ${err})`
 		);
-		productsModal[data.id].setContent(data);
+	});
+
+mainBroker.on('product:open', (data: IProduct) => {
+	const currentProduct = productsDetailView.find(
+		(product) => product.title.textContent == data.title
+	);
+	const productModal = new Modal(currentProduct.temp, mainBroker);
+	productsModal.push(productModal);
+	productModal.open();
+});
+
+mainBroker.on('product:basketed', (obj: ProductDetailView) => {
+	let currentPrice;
+	if (obj.price.textContent === 'Бесценно') currentPrice = 0;
+	else currentPrice = Number.parseInt(obj.price.textContent.split(' ')[0]);
+	const elem = {
+		id: obj.id,
+		title: obj.title.textContent,
+		price: currentPrice,
+	};
+	if (obj.submitButton.textContent === 'В корзину') {
+		mainBroker.emit('basket:push', elem);
+		obj.submitButton.textContent = 'Удалить';
 	} else {
-		productsModal[data.id].open(productsModal[data.id].template);
+		mainBroker.emit('basket:pop', elem);
+		obj.submitButton.textContent = 'В корзину';
 	}
 });
 
-mainBroker.on('order', () => {
-	basketModal.close();
-	orderModal.open(orderTemp);
-	const order = new Order();
+const basketModel = new BasketModel();
+
+const basketView = new BasketView(mainBroker);
+
+document
+	.querySelector('.header__basket')
+	.addEventListener('click', () => mainBroker.emit('basket:open'));
+
+const basketLabel = document.querySelector('.header__basket-counter');
+
+const basketModal = new Modal(basketView.temp, basketView.events);
+
+mainBroker.on('basket:open', () => {
+	basketModal.content = basketView.render();
+	basketModal.open();
 });
 
-mainBroker.on('paymentMethod:selected', (evt: Event) => {});
+mainBroker.on('basket:push', (data: TProductInBasketModel) => {
+	if (!basketModel.list.includes(data)) {
+		basketModel.add(data);
+		mainBroker.emit('basket:change');
+	}
+});
+
+mainBroker.on('basket:pop', (data: TProductInBasketModel) => {
+	basketModel.remove(data);
+	const popedProduct = productsDetailView.find(
+		(product) => product.id == data.id
+	);
+	popedProduct.submitButton.textContent = 'В корзину';
+	mainBroker.emit('basket:change');
+});
+
+mainBroker.on('basket:change', () => {
+	basketLabel.textContent = basketModel.list.length.toString();
+	basketView.list = basketModel.list.map(
+		(item) => new BasketItem(item.title, item.price, item.id)
+	);
+	basketModal.content = basketView.render();
+});
+
+const order = new Order(mainBroker);
+
+const addressView = new AddressView(mainBroker);
+const addressModal: Modal = new Modal(addressView.temp, mainBroker);
+
+mainBroker.on('basket:confirm', () => {
+	const basketListCache = basketModel.list.filter((item) => {
+		return item != basketModel.list.find((item) => item.price == 0);
+	});
+	if (basketListCache.length === 0) {
+		errorView.render(
+			'К сожалению, нельзя оформить заказ на продукт с бесценной стоимостью. Пожалуйста, вернитесь назад, и добавьте ещё несколько товаров или удалите бесценный.'
+		);
+		mainBroker.emit('errorModal:open');
+	} else {
+		basketModal.close();
+		addressModal.open();
+	}
+});
+
+mainBroker.on('errorModal:open', () => {
+	errorModal.open();
+});
+
+const contactsView = new ContactsView(mainBroker);
+const contactsModal: Modal = new Modal(contactsView.temp, mainBroker);
+
+mainBroker.on('addressForm:success', (data: TFirstPartOrder) => {
+	if (data.payment === 'Онлайн') order.payment = 'online';
+	else order.payment = 'cash';
+	order.address = data.address;
+	addressModal.close();
+	contactsModal.open();
+});
+
+const successView = new SuccessView(mainBroker);
+const successModal = new Modal(successView.temp, mainBroker);
+
+mainBroker.on('contactsForm:success', (data: TSecondPartOrder) => {
+	order.email = data.email;
+	order.phone = data.phone;
+	order.total = basketModel.total;
+	basketModel.list.forEach((item) => {
+		if (item.price !== 0) {
+			order.items.push(item.id);
+		}
+	});
+	api
+		.post('/order', order as IOrder)
+		.then((res) => {
+			contactsModal.submitButton.textContent = 'Ожидайте...';
+			if (Object.keys(res).includes('id')) {
+				successView.total.textContent = `Списано ${order.total.toString()} синапсов`;
+				contactsModal.close();
+				mainBroker.emit('order:success');
+			}
+		})
+		.catch((err) => {
+			errorView.render(
+				`Произошла ошибка при отправке информации о заказе на сервер. Пожалуйста, попробуйте повторить запрос позднее.(Сервер вернул ошибку: ${err})`
+			);
+		})
+		.finally(() => (contactsModal.submitButton.textContent = 'Оплатить'));
+});
+
+mainBroker.on('order:success', () => {
+	successModal.open();
+});
+
+mainBroker.on('success:exit', () => {
+	basketModel.list = [];
+	productsDetailView.forEach(
+		(item) => (item.submitButton.textContent = 'В корзину')
+	);
+	mainBroker.emit('basket:change');
+	addressView.clear();
+	contactsView.clear();
+	successModal.close();
+});

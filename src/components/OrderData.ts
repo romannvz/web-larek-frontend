@@ -1,16 +1,16 @@
-import { IProduct } from '../types';
+import { IOrder } from '../types';
+import { EventEmitter } from './base/events';
 
-export class Order {
-	paymentMethod: string;
+export class Order implements IOrder {
+	payment: string;
 	email: string;
 	phone: string;
 	address: string;
 	total: number;
-	items: Pick<IProduct, 'id'>[];
+	items: string[] = [];
+	events: EventEmitter;
 
-	constructor() {}
-
-	sendOrder(): void {}
-
-	validation() {}
+	constructor(broker: EventEmitter) {
+		this.events = broker;
+	}
 }

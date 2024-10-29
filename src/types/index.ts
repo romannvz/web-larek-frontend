@@ -7,14 +7,6 @@ export interface IProduct {
 	price: number | null;
 }
 
-export interface IProductsData {
-	_products: IProduct[];
-	currentId: Pick<IProduct, 'id'> | null;
-	addProduct(product: IProduct): void;
-	deleteProduct(product: IProduct, action: Function | null): void;
-	getProduct(productId: Pick<IProduct, 'id'>): IProduct;
-}
-
 export type TProductsMainPage = Pick<
 	IProduct,
 	'category' | 'title' | 'image' | 'price'
@@ -27,15 +19,17 @@ export type TProductShowMore = Pick<
 
 export type TProductInBasket = Pick<IProduct, 'title' | 'price'>;
 
+export type TProductInBasketModel = Pick<IProduct, 'id' | 'title' | 'price'>;
+
+export type TFirstPartOrder = Pick<IOrder, 'payment' | 'address'>;
+
+export type TSecondPartOrder = Pick<IOrder, 'email' | 'phone'>;
+
 export interface IOrder {
-	paymentMethod: string;
+	payment: string;
 	email: string;
 	phone: string;
 	address: string;
-	total: Pick<IProduct, 'price'>;
-	items: Pick<IProduct, 'id'>[];
-	getInfo(): void;
-	checkValidation(data: Record<string, string>): boolean;
-	setInfo(clientData: string[]): void;
-	sendOrder(): void;
+	total: number;
+	items: string[];
 }

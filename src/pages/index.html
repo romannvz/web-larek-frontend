@@ -284,6 +284,7 @@
 								При получении
 							</button>
 						</div>
+						<span class="payment_error"></span>
 					</div>
 					<label class="order__field">
 						<span class="form__label modal__title">Адрес доставки</span>
@@ -293,6 +294,7 @@
 							type="text"
 							placeholder="Введите адрес"
 						/>
+						<span class="address_error"></span>
 					</label>
 				</div>
 				<div class="modal__actions">
@@ -312,18 +314,28 @@
 						<input
 							name="email"
 							class="form__input"
-							type="text"
-							placeholder="Введите Email"
+							type="email"
+							placeholder="exapmle@domen.com"
+							pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$"
+							data-error-pattern="Email должен содержать латинские буквы, знак '@', а также доменную область (email: exapmle@domen.com)"
+							data-miss-value="Вы пропустили это поле"
 						/>
+						<span class="email_error"></span>
 					</label>
 					<label class="order__field">
 						<span class="form__label modal__title">Телефон</span>
 						<input
 							name="phone"
 							class="form__input"
-							type="text"
-							placeholder="+7 ("
+							type="tel"
+							placeholder="8 (9"
+							minlength="11"
+							maxlength="11"
+							pattern="[789][0-9]{10}"
+							data-error-pattern="Телефон должен состоять из 11 цифр"
+							data-miss-value="Вы пропустили это поле"
 						/>
+						<span class="phone_error"></span>
 					</label>
 				</div>
 				<div class="modal__actions">
