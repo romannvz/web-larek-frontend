@@ -141,6 +141,14 @@ mainBroker.on('errorModal:open', () => {
 const contactsView = new ContactsView(mainBroker);
 const contactsModal: Modal = new Modal(contactsView.temp, mainBroker);
 
+mainBroker.on('validation:addressView', (data: {firstElem: HTMLInputElement, firstErrorSpan: HTMLElement, secondElem: HTMLInputElement, secondErrorSpan: HTMLElement}) => {
+	order.checkViewValidity(data);
+})
+
+mainBroker.on('validation:contactsView', (data: {firstElem: HTMLInputElement, firstErrorSpan: HTMLElement, secondElem: HTMLInputElement, secondErrorSpan: HTMLElement}) => {
+	order.checkViewValidity(data);
+})
+
 mainBroker.on('addressForm:success', (data: TFirstPartOrder) => {
 	if (data.payment === 'Онлайн') order.payment = 'online';
 	else order.payment = 'cash';

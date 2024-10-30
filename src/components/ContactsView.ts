@@ -16,11 +16,6 @@ export class ContactsView {
 		this.emailSpan.textContent = '';
 		this.phoneSpan.textContent = '';
 		this.events = broker;
-		this.temp.querySelectorAll('.form__input').forEach((element) => {
-			element.addEventListener('input', () => {
-				this.validation();
-			});
-		});
 		this.submitButton.addEventListener('click', (evt) => {
 			evt.preventDefault();
 			this.email = this.emailInput.value;
@@ -34,19 +29,9 @@ export class ContactsView {
 
 	validation() {
 		this.submitButton.disabled = true;
-		if (this.emailInput.validity.valueMissing || !this.emailInput.value)
-			this.emailSpan.textContent = this.emailInput.dataset.missValue;
-		else if (this.emailInput.validity.patternMismatch)
-			this.emailSpan.textContent = this.emailInput.dataset.errorPattern;
-		else if (this.phoneInput.validity.valueMissing || !this.phoneInput.value)
-			this.phoneSpan.textContent = this.phoneInput.dataset.missValue;
-		else if (this.phoneInput.validity.patternMismatch)
-			this.phoneSpan.textContent = this.phoneInput.dataset.errorPattern;
-		else {
-			this.emailSpan.textContent = '';
-			this.phoneSpan.textContent = '';
+		this.events.emit('validation:contactsView',{firstElem: this.emailInput, firstErrorSpan: this.emailSpan, secondElem: this.phoneInput, secondErrorSpan: this.phoneSpan});
+		if(this.emailSpan.textContent === '' && this.phoneSpan.textContent === '')
 			this.submitButton.disabled = false;
-		}
 	}
 
 	clear() {

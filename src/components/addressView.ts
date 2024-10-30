@@ -1,4 +1,4 @@
-import { cloneTemplate } from '../utils/utils';
+import { cloneTemplate, createElement } from '../utils/utils';
 import { EventEmitter } from './base/events';
 
 export class AddressView {
@@ -7,13 +7,14 @@ export class AddressView {
 	buttonSpan: HTMLElement = this.temp.querySelector('.payment_error');
 	input: HTMLInputElement = this.temp.querySelector('.form__input');
 	inputSpan: HTMLElement = this.temp.querySelector('.address_error');
-	paymentMethod: string;
+	paymentMethod: HTMLInputElement;
 	address: string;
 	events: EventEmitter;
 
 	constructor(broker: EventEmitter) {
 		this.events = broker;
-		this.paymentMethod = '';
+		this.paymentMethod = this.input.cloneNode(true) as HTMLInputElement;
+		this.paymentMethod.value = '';
 		this.input.addEventListener('input', () => this.validation());
 		this.temp.querySelectorAll('#card').forEach((element) => {
 			element.addEventListener('click', () => {
@@ -32,25 +33,20 @@ export class AddressView {
 	}
 
 	chooseMethod(method: string) {
-		this.paymentMethod = method.trimEnd();
+		this.paymentMethod.value = method.trimEnd();
+		console.log('paymentMethod: ', this.paymentMethod.value)
 	}
 
 	validation() {
 		this.submitButton.disabled = true;
-		if (!this.paymentMethod) {
-			this.buttonSpan.textContent = 'Выберите способ оплаты';
-		} else if (this.input.validity.valueMissing || !this.input.value)
-			this.inputSpan.textContent = this.input.dataset.missValue;
-		else {
-			this.inputSpan.textContent = '';
-			this.buttonSpan.textContent = '';
+		this.events.emit('validation:addressView',{firstElem: this.paymentMethod, firstErrorSpan: this.buttonSpan, secondElem: this.input, secondErrorSpan: this.inputSpan});
+		if(this.buttonSpan.textContent === '' && this.inputSpan.textContent === '')
 			this.submitButton.disabled = false;
-		}
 	}
 
 	clear() {
 		this.input.value = '';
-		this.paymentMethod = '';
+		this.paymentMethod.value = '';
 		this.submitButton.disabled = true;
 	}
 }

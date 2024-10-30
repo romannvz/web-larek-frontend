@@ -293,6 +293,7 @@
 							class="form__input"
 							type="text"
 							placeholder="Введите адрес"
+							data-miss-value="Вы пропустили это поле"
 						/>
 						<span class="address_error"></span>
 					</label>
@@ -315,9 +316,9 @@
 							name="email"
 							class="form__input"
 							type="email"
-							placeholder="exapmle@domen.com"
-							pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$"
-							data-error-pattern="Email должен содержать латинские буквы, знак '@', а также доменную область (email: exapmle@domen.com)"
+							placeholder="example@domen.com"
+							pattern="^\S[a-zA-Z0-9]+@\S+\.\S+$"
+							data-error-pattern="Email должен содержать латинские буквы, знак '@', а также доменную область (email: example@domen.com)"
 							data-miss-value="Вы пропустили это поле"
 						/>
 						<span class="email_error"></span>
@@ -331,8 +332,8 @@
 							placeholder="8 (9"
 							minlength="11"
 							maxlength="11"
-							pattern="[789][0-9]{10}"
-							data-error-pattern="Телефон должен состоять из 11 цифр"
+							pattern="[78][9][0-9]{9}"
+							data-error-pattern="Телефон должен состоять из 11 цифр, начинаться с 79 или 89"
 							data-miss-value="Вы пропустили это поле"
 						/>
 						<span class="phone_error"></span>
