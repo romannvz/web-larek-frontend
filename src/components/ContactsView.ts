@@ -25,12 +25,20 @@ export class ContactsView {
 				phone: this.phone,
 			});
 		});
+		this.emailInput.addEventListener('input', () => this.validation());
+		this.phoneInput.addEventListener('input', () => this.validation());
 	}
 
 	validation() {
 		this.submitButton.disabled = true;
-		this.events.emit('validation:contactsView',{firstElem: this.emailInput, firstErrorSpan: this.emailSpan, secondElem: this.phoneInput, secondErrorSpan: this.phoneSpan});
-		if(this.emailSpan.textContent === '' && this.phoneSpan.textContent === '')
+		this.events.emit('validation:contactsView', {
+			firstElem: this.emailInput,
+			firstErrorSpan: this.emailSpan,
+			secondElem: this.phoneInput,
+			secondErrorSpan: this.phoneSpan,
+		});
+
+		if (this.emailSpan.textContent === '' && this.phoneSpan.textContent === '')
 			this.submitButton.disabled = false;
 	}
 

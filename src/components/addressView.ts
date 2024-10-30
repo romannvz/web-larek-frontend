@@ -34,13 +34,17 @@ export class AddressView {
 
 	chooseMethod(method: string) {
 		this.paymentMethod.value = method.trimEnd();
-		console.log('paymentMethod: ', this.paymentMethod.value)
 	}
 
 	validation() {
 		this.submitButton.disabled = true;
-		this.events.emit('validation:addressView',{firstElem: this.paymentMethod, firstErrorSpan: this.buttonSpan, secondElem: this.input, secondErrorSpan: this.inputSpan});
-		if(this.buttonSpan.textContent === '' && this.inputSpan.textContent === '')
+		this.events.emit('validation:addressView', {
+			firstElem: this.paymentMethod,
+			firstErrorSpan: this.buttonSpan,
+			secondElem: this.input,
+			secondErrorSpan: this.inputSpan,
+		});
+		if (this.buttonSpan.textContent === '' && this.inputSpan.textContent === '')
 			this.submitButton.disabled = false;
 	}
 
