@@ -130,6 +130,7 @@ mainBroker.on('basket:confirm', () => {
 		mainBroker.emit('errorModal:open');
 	} else {
 		basketModal.close();
+		addressView.clear();
 		addressModal.open();
 	}
 });
@@ -170,6 +171,7 @@ mainBroker.on('addressForm:success', (data: TFirstPartOrder) => {
 	else order.payment = 'cash';
 	order.address = data.address;
 	addressModal.close();
+	contactsView.clear();
 	contactsModal.open();
 });
 

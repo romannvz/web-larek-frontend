@@ -51,6 +51,8 @@ export class AddressView {
 	clear() {
 		this.input.value = '';
 		this.paymentMethod.value = '';
+		this.inputSpan.textContent = '';
+		this.buttonSpan.textContent = '';
 		this.submitButton.disabled = true;
 	}
 }

@@ -317,8 +317,8 @@
 							class="form__input"
 							type="email"
 							placeholder="example@domen.com"
-							pattern="^[a-zA-Z0-9\.\+_]+@\S+\.\S+$"
-							data-error-pattern="Email должен содержать латинские буквы, знак '@', а также доменную область (email: example@domen.com)"
+							pattern="^[a-zA-Z0-9\.\+_\-]{3,}@[a-zA-Z]{2,}\.[a-zA-Z]{2,}"
+							data-error-pattern="Email может содержать латинские буквы, цифры, знаки ' + ',' - ',' _ ',' . ', должен содержать знак '@', а также доменную область (email: example@domen.com). При этом, имя почтового ящика (часть 'example') состоит не менее чем из 3 символов, а доменные части (части 'domen' и 'com') не менее чем из 2 символов каждая."
 							data-miss-value="Вы пропустили это поле"
 						/>
 						<span class="email_error"></span>
@@ -333,7 +333,7 @@
 							minlength="11"
 							maxlength="11"
 							pattern="[78][9][0-9]{9}"
-							data-error-pattern="Телефон должен состоять из 11 цифр, начинаться с 79 или 89"
+							data-error-pattern="Телефон должен состоять из 11 цифр и начинаться с '79' или '89'"
 							data-miss-value="Вы пропустили это поле"
 						/>
 						<span class="phone_error"></span>

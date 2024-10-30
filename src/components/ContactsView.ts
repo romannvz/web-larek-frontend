@@ -44,7 +44,9 @@ export class ContactsView {
 
 	clear() {
 		this.emailInput.value = '';
+		this.emailSpan.textContent = '';
 		this.phoneInput.value = '';
+		this.phoneSpan.textContent = '';
 		this.submitButton.disabled = true;
 	}
 }
