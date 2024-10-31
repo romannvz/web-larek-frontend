@@ -18,10 +18,21 @@ export class ProductDetailView {
 		this.id = product.id;
 		this.image.src = product.image;
 		this.category.textContent = product.category;
+		if (product.category === 'другое')
+			this.category.classList.add('card__category_other');
+		else if (product.category === 'софт-скил')
+			this.category.classList.add('card__category_soft');
+		else if (product.category === 'дополнительное')
+			this.category.classList.add('card__category_additional');
+		else if (product.category === 'кнопка')
+			this.category.classList.add('card__category_button');
+		else this.category.classList.add('card__category_hard');
 		this.title.textContent = product.title;
 		this.description.textContent = product.description;
-		if (product.price === null) this.price.textContent = `Бесценно`;
-		else this.price.textContent = `${product.price} синапсов`;
+		if (product.price === null) {
+			this.price.textContent = `Бесценно`;
+			this.submitButton.disabled = true;
+		} else this.price.textContent = `${product.price} синапсов`;
 		this.submitButton.addEventListener('click', () =>
 			this.events.emit('product:basketed', this)
 		);

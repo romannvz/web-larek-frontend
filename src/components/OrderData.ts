@@ -1,5 +1,4 @@
 import { IOrder } from '../types';
-import { EventEmitter } from './base/events';
 
 export class Order implements IOrder {
 	payment: string;
@@ -8,11 +7,8 @@ export class Order implements IOrder {
 	address: string;
 	total: number;
 	items: string[] = [];
-	events: EventEmitter;
 
-	constructor(broker: EventEmitter) {
-		this.events = broker;
-	}
+	constructor() {}
 
 	checkViewValidity(data: {
 		firstElem: HTMLInputElement;

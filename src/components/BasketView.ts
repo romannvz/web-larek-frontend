@@ -15,36 +15,19 @@ export class BasketView {
 	constructor(broker: EventEmitter) {
 		this.events = broker;
 		this.basketSubmitButton = this.temp.querySelector('.button');
+		this.basketSubmitButton.disabled = true;
 		this.basketSubmitButton.addEventListener('click', () =>
 			this.events.emit('basket:confirm')
 		);
+		this.setList();
+	}
+
+	setList() {
+		this.list.forEach((item) => this.ul.append(item.temp));
 	}
 
 	render() {
-		this.total = 0;
-		if (this.list.length === 0) {
-			this.basketSubmitButton.disabled = true;
-			this.ul.textContent = 'Здесь пока пусто ):';
-			this.totalPrice.textContent = '0 синапсов';
-		} else {
-			this.ul.textContent = '';
-			this.basketSubmitButton.disabled = false;
-			let counter = 0;
-			this.list.forEach((item) => {
-				counter++;
-				item.index.textContent = counter.toString();
-				item.itemDelete.addEventListener('click', () => {
-					this.events.emit('basket:pop', {
-						id: item.id,
-						title: item.title.textContent,
-						price: item.priceElem.textContent,
-					});
-				});
-				this.total += item.price;
-				this.ul.append(item.temp);
-			});
-		}
-		this.totalPrice.textContent = `${this.total} синапсов`;
+		this.setList();
 		return this.temp;
 	}
 }

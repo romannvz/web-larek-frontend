@@ -1,19 +1,17 @@
 import { TProductInBasket, TProductInBasketModel } from '../types';
 import { cloneTemplate } from '../utils/utils';
-import { EventEmitter } from './base/events';
 
 export class BasketModel {
 	temp: HTMLElement = cloneTemplate('#basket');
 	ul: HTMLElement = this.temp.querySelector('.basket__list');
 	list: TProductInBasketModel[] = [];
 	total: number = 0;
-	events: EventEmitter;
 
 	constructor() {}
 
 	add(data: TProductInBasketModel) {
 		this.list.push(data);
-		if (data.price !== null) this.total += data.price;
+		this.total += data.price;
 	}
 
 	remove(data: TProductInBasket) {

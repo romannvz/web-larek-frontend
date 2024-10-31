@@ -20,49 +20,60 @@ import { ContactsView } from './components/ContactsView';
 import { SuccessView } from './components/SuccessView';
 import { ProductDetailView } from './components/ProductDetailView';
 import { ErrorView } from './components/ErrorView';
+import { ProductsData } from './components/ProductsData';
 
 const mainBroker = new EventEmitter();
 const api = new Api(API_URL);
-
-const productsElements: IProduct[] = [];
-const productsModal: Modal[] = [];
+const gallery: HTMLElement = document.querySelector('.gallery');
+const modal: Modal = new Modal();
+const productsData = new ProductsData();
 const productsDetailView: ProductDetailView[] = [];
-const errorView = new ErrorView(mainBroker);
-const errorModal = new Modal(errorView.errorElement, mainBroker);
+const basketModel = new BasketModel();
+const basketView = new BasketView(mainBroker);
+document
+	.querySelector('.header__basket')
+	.addEventListener('click', () => mainBroker.emit('basket:open'));
+const basketLabel = document.querySelector('.header__basket-counter');
+const order = new Order();
+const addressView = new AddressView(mainBroker);
+const contactsView = new ContactsView(mainBroker);
+const successView = new SuccessView(mainBroker);
 
 api
 	.get('/product')
 	.then((data: ApiListResponse<IProduct>) => {
 		data.items.forEach((elem) => {
 			elem.image = `${CDN_URL}` + elem.image;
-			productsElements.push(elem);
-			new ProductView(elem, mainBroker);
-			productsDetailView.push(new ProductDetailView(elem, mainBroker));
+			productsData.addItem(elem);
+		});
+		productsData.products.forEach((item) => {
+			gallery.append(new ProductView(item, mainBroker).render());
+			productsDetailView.push(new ProductDetailView(item, mainBroker));
 		});
 	})
 	.catch((err) => {
-		errorView.render(
-			`Произошла ошибка при загрузке информации с сервера. Пожалуйста, попробуйте повторить запрос позднее.(Сервер вернул ошибку: ${err})`
+		modal.setContent(
+			new ErrorView(
+				`Произошла ошибка при загрузке информации с сервера. Пожалуйста, попробуйте повторить запрос позднее.(Сервер вернул ошибку: ${err})`
+			).render()
 		);
+		modal.open();
 	});
 
 mainBroker.on('product:open', (data: IProduct) => {
-	const currentProduct = productsDetailView.find(
-		(product) => product.title.textContent == data.title
+	modal.setContent(
+		productsDetailView.find(
+			(product) => product.title.textContent == data.title
+		).temp
 	);
-	const productModal = new Modal(currentProduct.temp, mainBroker);
-	productsModal.push(productModal);
-	productModal.open();
+	modal.open();
 });
 
 mainBroker.on('product:basketed', (obj: ProductDetailView) => {
-	let currentPrice;
-	if (obj.price.textContent === 'Бесценно') currentPrice = 0;
-	else currentPrice = Number.parseInt(obj.price.textContent.split(' ')[0]);
 	const elem = {
 		id: obj.id,
 		title: obj.title.textContent,
-		price: currentPrice,
+		price: Number.parseInt(obj.price.textContent.split(' ')[0]),
 	};
 	if (obj.submitButton.textContent === 'В корзину') {
 		mainBroker.emit('basket:push', elem);
@@ -73,21 +84,9 @@ mainBroker.on('product:basketed', (obj: ProductDetailView) => {
 	}
 });
 
-const basketModel = new BasketModel();
-
-const basketView = new BasketView(mainBroker);
-
-document
-	.querySelector('.header__basket')
-	.addEventListener('click', () => mainBroker.emit('basket:open'));
-
-const basketLabel = document.querySelector('.header__basket-counter');
-
-const basketModal = new Modal(basketView.temp, basketView.events);
-
 mainBroker.on('basket:open', () => {
-	basketModal.content = basketView.render();
-	basketModal.open();
+	modal.setContent(basketView.render());
+	modal.open();
 });
 
 mainBroker.on('basket:push', (data: TProductInBasketModel) => {
@@ -99,10 +98,9 @@ mainBroker.on('basket:push', (data: TProductInBasketModel) => {
 
 mainBroker.on('basket:pop', (data: TProductInBasketModel) => {
 	basketModel.remove(data);
-	const popedProduct = productsDetailView.find(
+	productsDetailView.find(
 		(product) => product.id == data.id
-	);
-	popedProduct.submitButton.textContent = 'В корзину';
+	).submitButton.textContent = 'В корзину';
 	mainBroker.emit('basket:change');
 });
 
@@ -111,36 +109,35 @@ mainBroker.on('basket:change', () => {
 	basketView.list = basketModel.list.map(
 		(item) => new BasketItem(item.title, item.price, item.id)
 	);
-	basketModal.content = basketView.render();
+	if (basketView.list.length === 0) {
+		basketView.basketSubmitButton.disabled = true;
+		basketView.ul.textContent = 'Здесь пока пусто ):';
+		basketView.total = 0;
+	} else {
+		basketView.ul.textContent = '';
+		basketView.basketSubmitButton.disabled = false;
+		let counter = 0;
+		basketView.list.forEach((item) => {
+			counter++;
+			item.index.textContent = counter.toString();
+			item.itemDelete.addEventListener('click', () => {
+				mainBroker.emit('basket:pop', {
+					id: item.id,
+					title: item.title.textContent,
+					price: item.price,
+				});
+			});
+		});
+		basketView.total = basketModel.total;
+	}
+	basketView.totalPrice.textContent = `${basketView.total} синапсов`;
+	basketView.render();
 });
-
-const order = new Order(mainBroker);
-
-const addressView = new AddressView(mainBroker);
-const addressModal: Modal = new Modal(addressView.temp, mainBroker);
 
 mainBroker.on('basket:confirm', () => {
-	const basketListCache = basketModel.list.filter((item) => {
-		return item != basketModel.list.find((item) => item.price == 0);
-	});
-	if (basketListCache.length === 0) {
-		errorView.render(
-			'К сожалению, нельзя оформить заказ на продукт с бесценной стоимостью. Пожалуйста, вернитесь назад, и добавьте ещё несколько товаров или удалите бесценный.'
-		);
-		mainBroker.emit('errorModal:open');
-	} else {
-		basketModal.close();
-		addressView.clear();
-		addressModal.open();
-	}
+	addressView.clear();
+	modal.setContent(addressView.temp);
 });
-
-mainBroker.on('errorModal:open', () => {
-	errorModal.open();
-});
-
-const contactsView = new ContactsView(mainBroker);
-const contactsModal: Modal = new Modal(contactsView.temp, mainBroker);
 
 mainBroker.on(
 	'validation:addressView',
@@ -170,52 +167,46 @@ mainBroker.on('addressForm:success', (data: TFirstPartOrder) => {
 	if (data.payment === 'Онлайн') order.payment = 'online';
 	else order.payment = 'cash';
 	order.address = data.address;
-	addressModal.close();
 	contactsView.clear();
-	contactsModal.open();
+	modal.setContent(contactsView.temp);
+	contactsView.submitButton.textContent = 'Оплатить';
 });
-
-const successView = new SuccessView(mainBroker);
-const successModal = new Modal(successView.temp, mainBroker);
 
 mainBroker.on('contactsForm:success', (data: TSecondPartOrder) => {
 	order.email = data.email;
 	order.phone = data.phone;
 	order.total = basketModel.total;
-	basketModel.list.forEach((item) => {
-		if (item.price !== 0) {
-			order.items.push(item.id);
-		}
-	});
+	basketModel.list.forEach((item) => order.items.push(item.id));
+	modal.submitButton.textContent = 'Ожидайте...';
 	api
 		.post('/order', order as IOrder)
 		.then((res) => {
-			contactsModal.submitButton.textContent = 'Ожидайте...';
 			if (Object.keys(res).includes('id')) {
 				successView.total.textContent = `Списано ${order.total.toString()} синапсов`;
-				contactsModal.close();
 				mainBroker.emit('order:success');
 			}
 		})
 		.catch((err) => {
-			errorView.render(
-				`Произошла ошибка при отправке информации о заказе на сервер. Пожалуйста, попробуйте повторить запрос позднее.(Сервер вернул ошибку: ${err})`
+			modal.setContent(
+				new ErrorView(
+					`Произошла ошибка при отправке информации о заказе на сервер. Пожалуйста, попробуйте повторить запрос позднее.(Сервер вернул ошибку: ${err})`
+				).render()
 			);
-		})
-		.finally(() => (contactsModal.submitButton.textContent = 'Оплатить'));
+		});
 });
 
 mainBroker.on('order:success', () => {
-	successModal.open();
-});
-
-mainBroker.on('success:exit', () => {
+	modal.setContent(successView.temp);
+	modal.open();
+	order.items = [];
 	basketModel.list = [];
+	basketModel.total = 0;
 	productsDetailView.forEach(
 		(item) => (item.submitButton.textContent = 'В корзину')
 	);
 	mainBroker.emit('basket:change');
 	addressView.clear();
 	contactsView.clear();
-	successModal.close();
 });
+
+mainBroker.on('success:exit', () => modal.close());

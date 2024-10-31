@@ -37,7 +37,6 @@ export class ContactsView {
 			secondElem: this.phoneInput,
 			secondErrorSpan: this.phoneSpan,
 		});
-
 		if (this.emailSpan.textContent === '' && this.phoneSpan.textContent === '')
 			this.submitButton.disabled = false;
 	}
