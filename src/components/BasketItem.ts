@@ -1,4 +1,5 @@
 import { cloneTemplate } from '../utils/utils';
+import { EventEmitter } from './base/events';
 
 export class BasketItem {
 	temp: HTMLElement = cloneTemplate('#card-basket');
@@ -10,11 +11,28 @@ export class BasketItem {
 		'.basket__item-delete'
 	);
 	id: string;
+	events: EventEmitter;
 
-	constructor(title: string, price: number, id: string) {
+	constructor(
+		index: string,
+		title: string,
+		price: number,
+		id: string,
+		broker: EventEmitter
+	) {
 		this.id = id;
 		this.title.textContent = title;
 		this.price = price;
 		this.priceElem.textContent = `${price.toString()} синапсов`;
+		this.index.textContent = index;
+		this.events = broker;
+		this.itemDelete.addEventListener('click', () => {
+			this.events.emit('basket:pop', {
+				id: this.id,
+				title: this.title.textContent,
+				price: this.price,
+			});
+		});
+		return this;
 	}
 }

@@ -29,6 +29,10 @@ export class ContactsView {
 		this.phoneInput.addEventListener('input', () => this.validation());
 	}
 
+	setButtonText(text: string) {
+		this.submitButton.textContent = text;
+	}
+
 	validation() {
 		this.submitButton.disabled = true;
 		this.events.emit('validation:contactsView', {

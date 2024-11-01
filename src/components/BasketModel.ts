@@ -1,4 +1,4 @@
-import { TProductInBasket, TProductInBasketModel } from '../types';
+import { TProductInBasketModel } from '../types';
 import { cloneTemplate } from '../utils/utils';
 
 export class BasketModel {
@@ -14,10 +14,15 @@ export class BasketModel {
 		this.total += data.price;
 	}
 
-	remove(data: TProductInBasket) {
+	remove(data: TProductInBasketModel) {
 		this.list = this.list.filter((item) => {
-			return item != this.list.find((item) => item.title == data.title);
+			return item != this.list.find((item) => item.id == data.id);
 		});
 		this.total -= data.price;
+	}
+
+	clear() {
+		this.list = [];
+		this.total = 0;
 	}
 }

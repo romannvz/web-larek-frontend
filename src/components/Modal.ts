@@ -20,6 +20,10 @@ export class Modal {
 		this.modalContent.replaceChildren(content);
 	}
 
+	setButtonText(text: string) {
+		this.submitButton.textContent = text;
+	}
+
 	open() {
 		this.modalContainer.classList.add('modal_active');
 		document.addEventListener('keydown', (evt) => {

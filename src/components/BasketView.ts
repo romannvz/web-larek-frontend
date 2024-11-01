@@ -6,10 +6,10 @@ export class BasketView {
 	temp: HTMLElement = cloneTemplate('#basket');
 	ul: HTMLElement = this.temp.querySelector('.basket__list');
 	index: HTMLElement = this.temp.querySelector('.basket__item-index');
-	total: number = 0;
+	_total: number = 0;
 	totalPrice: HTMLElement = this.temp.querySelector('.basket__price');
 	basketSubmitButton: HTMLButtonElement;
-	list: BasketItem[] = [];
+	_list: BasketItem[] = [];
 	events: EventEmitter;
 
 	constructor(broker: EventEmitter) {
@@ -19,15 +19,32 @@ export class BasketView {
 		this.basketSubmitButton.addEventListener('click', () =>
 			this.events.emit('basket:confirm')
 		);
-		this.setList();
+		this.ul.textContent = 'Здесь пока пусто ):';
 	}
 
-	setList() {
-		this.list.forEach((item) => this.ul.append(item.temp));
+	set total(count: number) {
+		if (count === 0) this._total = count;
+		else this._total += count;
+	}
+
+	get total() {
+		return this._total;
+	}
+
+	set list(content: BasketItem[]) {
+		this._list = content;
+		if (this._list.length === 0) {
+			this.basketSubmitButton.disabled = true;
+			this.ul.textContent = 'Здесь пока пусто ):';
+		} else this.basketSubmitButton.disabled = false;
+		this.totalPrice.textContent = `${this._total} синапсов`;
+	}
+
+	setUl(elem: HTMLElement) {
+		this.ul.append(elem);
 	}
 
 	render() {
-		this.setList();
 		return this.temp;
 	}
 }

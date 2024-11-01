@@ -15,7 +15,7 @@ import { BasketView } from './components/BasketView';
 import { Order } from './components/OrderData';
 import { BasketItem } from './components/BasketItem';
 import { BasketModel } from './components/BasketModel';
-import { AddressView } from './components/addressView';
+import { AddressView } from './components/AddressView';
 import { ContactsView } from './components/ContactsView';
 import { SuccessView } from './components/SuccessView';
 import { ProductDetailView } from './components/ProductDetailView';
@@ -75,12 +75,12 @@ mainBroker.on('product:basketed', (obj: ProductDetailView) => {
 		title: obj.title.textContent,
 		price: Number.parseInt(obj.price.textContent.split(' ')[0]),
 	};
-	if (obj.submitButton.textContent === 'В корзину') {
+	if (obj.getButtonText() === 'В корзину') {
 		mainBroker.emit('basket:push', elem);
-		obj.submitButton.textContent = 'Удалить';
+		obj.setButtonText('Удалить');
 	} else {
 		mainBroker.emit('basket:pop', elem);
-		obj.submitButton.textContent = 'В корзину';
+		obj.setButtonText('В корзину');
 	}
 });
 
@@ -98,39 +98,30 @@ mainBroker.on('basket:push', (data: TProductInBasketModel) => {
 
 mainBroker.on('basket:pop', (data: TProductInBasketModel) => {
 	basketModel.remove(data);
-	productsDetailView.find(
-		(product) => product.id == data.id
-	).submitButton.textContent = 'В корзину';
+	productsDetailView
+		.find((product) => product.id == data.id)
+		.setButtonText('В корзину');
 	mainBroker.emit('basket:change');
 });
 
 mainBroker.on('basket:change', () => {
 	basketLabel.textContent = basketModel.list.length.toString();
-	basketView.list = basketModel.list.map(
-		(item) => new BasketItem(item.title, item.price, item.id)
-	);
-	if (basketView.list.length === 0) {
-		basketView.basketSubmitButton.disabled = true;
-		basketView.ul.textContent = 'Здесь пока пусто ):';
-		basketView.total = 0;
-	} else {
-		basketView.ul.textContent = '';
-		basketView.basketSubmitButton.disabled = false;
-		let counter = 0;
-		basketView.list.forEach((item) => {
-			counter++;
-			item.index.textContent = counter.toString();
-			item.itemDelete.addEventListener('click', () => {
-				mainBroker.emit('basket:pop', {
-					id: item.id,
-					title: item.title.textContent,
-					price: item.price,
-				});
-			});
-		});
-		basketView.total = basketModel.total;
-	}
-	basketView.totalPrice.textContent = `${basketView.total} синапсов`;
+	let counter = 0;
+	basketView.total = 0;
+	basketView.ul.textContent = '';
+	basketView.list = basketModel.list.map((item) => {
+		counter++;
+		basketView.total = item.price;
+		const pr = new BasketItem(
+			counter.toString(),
+			item.title,
+			item.price,
+			item.id,
+			mainBroker
+		);
+		basketView.setUl(pr.temp);
+		return pr;
+	});
 	basketView.render();
 });
 
@@ -169,7 +160,7 @@ mainBroker.on('addressForm:success', (data: TFirstPartOrder) => {
 	order.address = data.address;
 	contactsView.clear();
 	modal.setContent(contactsView.temp);
-	contactsView.submitButton.textContent = 'Оплатить';
+	contactsView.setButtonText('Оплатить');
 });
 
 mainBroker.on('contactsForm:success', (data: TSecondPartOrder) => {
@@ -177,7 +168,7 @@ mainBroker.on('contactsForm:success', (data: TSecondPartOrder) => {
 	order.phone = data.phone;
 	order.total = basketModel.total;
 	basketModel.list.forEach((item) => order.items.push(item.id));
-	modal.submitButton.textContent = 'Ожидайте...';
+	modal.setButtonText('Ожидайте...');
 	api
 		.post('/order', order as IOrder)
 		.then((res) => {
@@ -197,16 +188,12 @@ mainBroker.on('contactsForm:success', (data: TSecondPartOrder) => {
 
 mainBroker.on('order:success', () => {
 	modal.setContent(successView.temp);
-	modal.open();
 	order.items = [];
-	basketModel.list = [];
-	basketModel.total = 0;
-	productsDetailView.forEach(
-		(item) => (item.submitButton.textContent = 'В корзину')
-	);
-	mainBroker.emit('basket:change');
+	basketModel.clear();
 	addressView.clear();
 	contactsView.clear();
+	productsDetailView.forEach((item) => item.setButtonText('В корзину'));
+	mainBroker.emit('basket:change');
 });
 
 mainBroker.on('success:exit', () => modal.close());

@@ -37,4 +37,12 @@ export class ProductDetailView {
 			this.events.emit('product:basketed', this)
 		);
 	}
+
+	getButtonText() {
+		return this.submitButton.textContent;
+	}
+
+	setButtonText(text: string){
+		this.submitButton.textContent = text;
+	}
 }
